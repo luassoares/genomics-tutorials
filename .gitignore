@@ -1,0 +1,17 @@
+.DS_Store
+# data and results are not part of the tutorials
+*.vcf
+*.vcf.gz
+*.nex
+*.nexus
+*.tre
+results/
+# downloaded third-party scripts
+get_fixed_site_gts.rb
+plot_fixed_site_gts.rb
+vcf2phylip.py
+dtools.py
+# rendered documents
+*.html
+*_files/
+__pycache__/
