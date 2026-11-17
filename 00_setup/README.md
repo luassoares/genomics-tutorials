@@ -11,6 +11,11 @@ Commands are for a Linux (Ubuntu) server.
 | Ruby | 02 Ancestry painting | `conda install -c conda-forge ruby` |
 | Dsuite | 03 Dsuite | compile (below) |
 | Python 3 | scripts of this repository, `dtools.py` | `numpy`, `pandas`, `matplotlib` for `dtools.py` |
+| R packages | 04, 06, 07, 08, 09, 10, 11 | see [section 5](#5-r-packages) |
+| Stacks (`populations`) | 05 Diversity | `conda install -c bioconda stacks` |
+| structure_threader (+ STRUCTURE, fastSTRUCTURE) | 07 STRUCTURE | `pip install structure_threader --user` |
+| EEMS | 09 EEMS | compile (see [09_eems](../09_eems/#2-install-eems)) |
+| FEEMS | 11 FEEMS | conda environment (see [11_feems](../11_feems/#2-install-feems)) |
 
 ## 1. PAUP\*
 
@@ -129,3 +134,53 @@ these tutorials use:
 ```bash
 exec > >(tee my_log.out) 2>&1
 ```
+
+## 5. R packages
+
+On a server without root access, R packages are installed in your home
+folder. Inside R:
+
+```r
+install.packages(c("vcfR", "adegenet", "ggplot2", "pcadapt", "conStruct",
+                   "geodist", "doParallel", "foreach", "maps", "remotes"))
+remotes::install_github("royfrancis/pophelper")     # STRUCTURE plots (07)
+remotes::install_github("dipetkov/reemsplots2")     # EEMS plots (09)
+install.packages(c("BiocManager", "scatterpie", "dggridR", "sf"))
+BiocManager::install("LEA")                         # sNMF (10)
+remotes::install_github("bcm-uga/TESS3_encho_sen")  # TESS3 (10)
+```
+
+| Package | Used in |
+|---|---|
+| `vcfR` | 04, 06, 08, 09 (read VCFs) |
+| `pcadapt` | 04 outlier SNPs |
+| `adegenet` | 06 PCA and DAPC |
+| `ggplot2` | 06, 09 plots |
+| `pophelper` | 07 STRUCTURE plots |
+| `conStruct`, `geodist`, `doParallel`, `foreach` | 08 conStruct |
+| `reemsplots2`, `maps` | 09 EEMS plots |
+| `LEA`, `tess3r`, `scatterpie` | 10 sNMF and TESS3 |
+| `dggridR`, `sf` | 11 FEEMS grid |
+
+If compilation fails (common for `conStruct`, which uses Stan), install R
+and the packages in a conda environment instead:
+
+```bash
+conda create -n rgen -c conda-forge r-base r-rstan r-vcfr r-adegenet r-ggplot2
+conda activate rgen
+R    # then install.packages() the remaining packages, as above
+```
+
+Check whether a package is available in conda with
+`conda search -c conda-forge r-<name>` (names in lower case).
+
+## 6. structure_threader
+
+```bash
+pip install structure_threader --user
+structure_threader -h
+ls ~/.local/bin/ | grep -i structure     # STRUCTURE and fastStructure binaries
+```
+
+The paths of the binaries are given to structure_threader with `-st`
+(STRUCTURE) and `-fs` (fastStructure); see [07_structure](../07_structure/).
