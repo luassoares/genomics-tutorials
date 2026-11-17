@@ -1,116 +1,62 @@
-#!/usr/bin/env Rscript
-# Plot the results of run_construct.R:
-#   - cross-validation: predictive accuracy of the spatial and non-spatial
-#     models for each K, with 95% confidence intervals, and paired t-tests
-#   - layer contributions of the spatial runs, K = 1..K_MAX
-#   - admixture bar plot and map of pie charts for one K
-#
-# Usage: edit the settings below, then
-#   Rscript plot_construct.R
-#
-# Output (in OUTDIR/plots, file names start with PREFIX):
-#   _xval.pdf                cross-validation, both models
-#   _xval_ttests.txt         paired t-tests between consecutive values of K (spatial model)
-#   _layer_contributions.pdf / .txt
-#   _spK<K>_structure.pdf    admixture proportions per individual
-#   _spK<K>_pies.pdf         admixture proportions on the map
+# conStruct: plots of the results of run_construct.R.
+# Run in RStudio, line by line (see the tutorial).
 
-# ---- settings ----
-OUTDIR  <- "construct"       # same as in run_construct.R
-PREFIX  <- "my_data"
-K_MAX   <- 5
-K_PLOT  <- 3                 # K for the admixture plots
-POPMAP  <- "popmap.txt"      # <population> <tab> <sample ID>; used to order the bar plot (NULL = no order)
-COLORS  <- c("#3b6a87", "#e07342", "#95c073", "#f8961e", "#8a312b",
-             "#735d78", "#5c9ead", "#da8e95", "#7cb684", "#ffe3b2")
+library(conStruct)
 
-# ---- packages ----
-if (!requireNamespace("conStruct", quietly = TRUE)) stop("Install the R package conStruct")
-suppressPackageStartupMessages(library(conStruct))
-pdir <- file.path(OUTDIR, "plots")
-dir.create(pdir, showWarnings = FALSE)
-out <- function(x) file.path(pdir, paste0(PREFIX, x))
-coords <- readRDS(file.path(OUTDIR, paste0(PREFIX, "_coords.rds")))
+setwd("~/my_project/08_construct")      # change to your folder
 
-# ---- cross-validation ----
-xfile <- function(m) file.path(OUTDIR, "xval", sprintf("%s_%s_xval_results.txt", PREFIX, m))
-if (file.exists(xfile("sp"))) {
-  sp  <- as.matrix(read.table(xfile("sp"),  header = TRUE, stringsAsFactors = FALSE))
-  nsp <- as.matrix(read.table(xfile("nsp"), header = TRUE, stringsAsFactors = FALSE))
-  # rows = K, columns = replicates
-  ci <- function(m) apply(m, 1, function(x) mean(x) + c(-1.96, 1.96) * sd(x) / sqrt(length(x)))
-  sp_ci <- ci(sp); nsp_ci <- ci(nsp)
-  ks <- seq_len(nrow(sp))
+# 1. Cross-validation ------------------------------------------------------------
+sp  <- as.matrix(read.table("results/my_data_sp_xval_results.txt", header = TRUE))    # spatial
+nsp <- as.matrix(read.table("results/my_data_nsp_xval_results.txt", header = TRUE))  # non-spatial
+# rows = K (1 to 5), columns = replicates
 
-  pdf(out("_xval.pdf"), width = 10, height = 4)
-  par(mfrow = c(1, 3))
-  plot(ks, rowMeans(sp), pch = 19, col = "blue", ylim = range(sp, nsp),
-       xlab = "K", ylab = "predictive accuracy", main = "Spatial (blue) vs non-spatial (green)")
-  points(ks, rowMeans(nsp), pch = 19, col = "green3")
-  for (d in list(list(sp, sp_ci, "blue", "Spatial"), list(nsp, nsp_ci, "green3", "Non-spatial"))) {
-    plot(ks, rowMeans(d[[1]]), pch = 19, col = d[[3]], ylim = range(d[[2]]),
-         xlab = "K", ylab = "predictive accuracy", main = paste(d[[4]], "(95% CI)"))
-    segments(ks, d[[2]][1, ], ks, d[[2]][2, ], col = d[[3]], lwd = 2)
-  }
-  invisible(dev.off())
+# mean predictive accuracy for each K (higher = better)
+plot(rowMeans(sp), pch = 19, col = "blue", ylim = range(sp, nsp),
+     xlab = "K", ylab = "predictive accuracy", main = "spatial (blue) and non-spatial (green)")
+points(rowMeans(nsp), pch = 19, col = "green")
 
-  # Is K+1 better than K? Paired by replicate (the same data partition)
-  sink(out("_xval_ttests.txt"))
-  for (k in ks[-1]) {
-    tt <- t.test(sp[k, ], sp[k - 1, ], paired = TRUE, alternative = "greater")
-    cat(sprintf("Spatial K=%d vs K=%d: mean difference = %.2f, t = %.2f, p = %.3g\n",
-                k, k - 1, tt$estimate, tt$statistic, tt$p.value))
-  }
-  for (k in ks) {
-    tt <- t.test(sp[k, ], nsp[k, ], paired = TRUE, alternative = "greater")
-    cat(sprintf("K=%d spatial vs non-spatial: mean difference = %.2f, p = %.3g\n",
-                k, tt$estimate, tt$p.value))
-  }
-  sink()
-  cat(readLines(out("_xval_ttests.txt")), sep = "\n")
-} else {
-  message("No cross-validation results in ", file.path(OUTDIR, "xval"))
+# 95% confidence intervals of the spatial model
+sp_CI <- apply(sp, 1, function(x) mean(x) + c(-1.96, 1.96) * sd(x) / sqrt(length(x)))
+plot(rowMeans(sp), pch = 19, col = "blue", ylim = range(sp_CI),
+     xlab = "K", ylab = "predictive accuracy", main = "spatial model, 95% CI")
+segments(x0 = 1:nrow(sp), y0 = sp_CI[1, ], x1 = 1:nrow(sp), y1 = sp_CI[2, ], col = "blue", lwd = 2)
+
+# Is K = 2 better than K = 1? (paired by replicate)
+t.test(sp[2, ], sp[1, ], paired = TRUE, alternative = "greater")
+# Is the spatial model better than the non-spatial one at K = 1?
+t.test(sp[1, ], nsp[1, ], paired = TRUE, alternative = "greater")
+
+# 2. Layer contributions (spatial runs K = 1 to 5) -------------------------------
+layer_contributions <- matrix(0, nrow = 5, ncol = 5)
+
+load("results/my_data_spK1_conStruct.results.Robj")
+load("results/my_data_spK1_data.block.Robj")
+layer_contributions[1, 1] <- calculate.layer.contribution(conStruct.results[[1]], data.block)
+previous <- conStruct.results[[1]]$MAP$admix.proportions
+
+for (k in 2:5) {
+  load(paste0("results/my_data_spK", k, "_conStruct.results.Robj"))
+  load(paste0("results/my_data_spK", k, "_data.block.Robj"))
+  # the layers can be in a different order in each run: match them to the previous K
+  layer_order <- match.layers.x.runs(previous, conStruct.results[[1]]$MAP$admix.proportions)
+  layer_contributions[1:k, k] <- calculate.layer.contribution(conStruct.results[[1]], data.block,
+                                                               layer.order = layer_order)
+  previous <- conStruct.results[[1]]$MAP$admix.proportions[, layer_order]
 }
 
-# ---- layer contributions (spatial runs) ----
-rfile <- function(k, what) file.path(OUTDIR, "runs", sprintf("%s_spK%d_%s.Robj", PREFIX, k, what))
-layer_contr <- matrix(0, nrow = K_MAX, ncol = K_MAX, dimnames = list(paste0("layer", 1:K_MAX), paste0("K=", 1:K_MAX)))
-prev <- NULL
-for (k in 1:K_MAX) {
-  if (!file.exists(rfile(k, "conStruct.results"))) { message("Missing run K=", k); next }
-  load(rfile(k, "conStruct.results"))      # conStruct.results
-  load(rfile(k, "data.block"))             # data.block
-  res <- conStruct.results[[1]]
-  # layers can be in a different order in each run: match them to the previous K
-  ord <- if (is.null(prev) || k == 1) seq_len(k) else match.layers.x.runs(prev, res$MAP$admix.proportions)
-  layer_contr[1:k, k] <- calculate.layer.contribution(conStruct.results = res, data.block = data.block,
-                                                      layer.order = ord)
-  prev <- res$MAP$admix.proportions[, ord, drop = FALSE]
-}
-write.table(round(layer_contr, 4), out("_layer_contributions.txt"), sep = "\t", quote = FALSE)
-pdf(out("_layer_contributions.pdf"), width = 6, height = 5)
-barplot(layer_contr, col = COLORS[1:K_MAX], ylab = "layer contribution", border = NA)
-invisible(dev.off())
-print(round(layer_contr, 3))
+colors <- c("blue", "red", "goldenrod1", "forestgreen", "darkorchid1")
+barplot(layer_contributions, col = colors, names.arg = paste0("K=", 1:5),
+        ylab = "layer contributions")
+round(layer_contributions, 3)
 
-# ---- admixture plots for K_PLOT ----
-if (file.exists(rfile(K_PLOT, "conStruct.results"))) {
-  load(rfile(K_PLOT, "conStruct.results"))
-  adm <- conStruct.results[[1]]$MAP$admix.proportions
-  ids <- rownames(coords)
-  ord <- seq_len(nrow(adm))
-  if (!is.null(POPMAP)) {
-    pm <- read.table(POPMAP, sep = "\t", header = FALSE, colClasses = "character", col.names = c("pop", "id"))
-    pops <- pm$pop[match(ids, pm$id)]
-    ord <- order(factor(pops, levels = unique(pm$pop)))
-  }
-  pdf(out(sprintf("_spK%d_structure.pdf", K_PLOT)), width = 12, height = 4)
-  make.structure.plot(admix.proportions = adm, sample.order = ord, sample.names = ids,
-                      mar = c(6, 4, 2, 2), layer.colors = COLORS[1:K_PLOT])
-  invisible(dev.off())
-  pdf(out(sprintf("_spK%d_pies.pdf", K_PLOT)), width = 7, height = 7)
-  make.admix.pie.plot(admix.proportions = adm, coords = coords, layer.colors = COLORS[1:K_PLOT],
-                      radii = 2.5)
-  invisible(dev.off())
-}
-message("Plots written to ", pdir, "/")
+# 3. Admixture plots for the chosen K --------------------------------------------
+K <- 3                                       # change to your K
+load(paste0("results/my_data_spK", K, "_conStruct.results.Robj"))
+admix <- conStruct.results[[1]]$MAP$admix.proportions
+
+load(paste0("results/my_data_spK", K, "_data.block.Robj"))
+coords <- data.block$coords
+
+make.structure.plot(admix.proportions = admix, layer.colors = colors[1:K])     # bar plot
+make.admix.pie.plot(admix.proportions = admix, coords = coords,
+                    layer.colors = colors[1:K], radii = 2.5)                  # pies on the map

@@ -1,161 +1,188 @@
 # 08 — conStruct: structure and isolation by distance
 
-Test whether genetic differentiation is better explained by discrete
-clusters, by continuous isolation by distance, or by both, with conStruct.
+Test whether the genetic differentiation is better explained by discrete
+groups, by continuous isolation by distance, or by both, with conStruct.
 
 **Scripts**
 
 | Script | What it does |
 |---|---|
-| [`scripts/run_construct.R`](scripts/run_construct.R) | Prepares the data from a VCF and coordinates, runs the cross-validation and the full spatial and non-spatial runs |
-| [`scripts/plot_construct.R`](scripts/plot_construct.R) | Cross-validation plots and t-tests, layer contributions, admixture bar plot and pie map |
+| [`scripts/run_construct.R`](scripts/run_construct.R) | Prepares the data, runs the cross-validation and the spatial runs for K = 1 to 5 (on the server: it takes hours) |
+| [`scripts/plot_construct.R`](scripts/plot_construct.R) | Cross-validation plots and tests, layer contributions, admixture plots (RStudio) |
 
-**Requirements:** R with `conStruct`, `vcfR`, `geodist`, `doParallel` and
-`foreach`. A filtered VCF **without the outgroup** from
-[04_filtering](../04_filtering/), and the coordinates of each individual.
+## Install
+
+conStruct runs for hours, so run it on the server, in the R environment of
+[00_setup](../00_setup/#13-r-and-rstudio):
+
+```bash
+conda activate r-popgen
+R
+```
+
+```r
+install.packages(c("conStruct", "vcfR", "geodist", "doParallel", "foreach"))
+```
+
+conStruct uses Stan, and the installation compiles code: it can take a
+while. Install it also in RStudio on your computer for the plots.
+
+## Prepare the folder
+
+```
+08_construct/
+├── data/      my_data-miss0.9-maf0.01-th100.recode.vcf  (from 03_filtering, without outgroup)
+│              coords.txt
+├── scripts/   run_construct.R, plot_construct.R
+└── results/
+```
+
+`coords.txt`: `<sample ID> <tab> <longitude> <tab> <latitude>`, decimal
+degrees, no header, **longitude first** (see
+[00_setup](../00_setup/#21-files-used-in-many-tutorials)). Individuals from
+the same site have the same coordinates.
 
 ---
 
 ## 1. Background
 
-STRUCTURE-like methods ([07](../07_structure/)) assume discrete
-populations. When populations are distributed along a continuous range,
-**isolation by distance** (IBD: nearby individuals are more similar) can
-appear as several clusters with "admixed" individuals between them, even
-without discrete groups.
+STRUCTURE-like methods ([06](../06_structure/), [07](../07_snmf_tess3/))
+assume discrete populations. When populations are distributed along a
+continuous range, **isolation by distance** (IBD: nearby individuals are
+more similar) can appear as several clusters with "admixed" individuals
+between them, even without discrete groups.
 
-conStruct models each individual as a mix of **K layers**. In the
-**spatial model**, relatedness within each layer decreases with geographic
-distance; the **non-spatial model** is like STRUCTURE. Comparing them
-answers two questions:
+conStruct describes each individual as a mix of **K layers**. In the
+**spatial model**, the relatedness within each layer decreases with the
+geographic distance; the **non-spatial model** is like STRUCTURE. Comparing
+them answers two questions:
 
-1. Does adding distance improve the model? (spatial vs non-spatial)
+1. Does the geographic distance improve the model? (spatial vs
+   non-spatial)
 2. How many layers are needed? (cross-validation and layer contributions)
 
-## 2. Input files
-
-- **VCF**: the script calculates the allele frequency of each individual
-  (0, 0.5, 1) directly from the genotypes.
-- **Coordinates**: one line per individual, `<sample ID> <tab> <longitude>
-  <tab> <latitude>`, decimal degrees, **longitude first**:
-
-  ```
-  1023	-50.950	-25.200
-  1024	-50.950	-25.200
-  1101	-51.217	-25.333
-  ```
-
-  Individuals from the same site can have the same coordinates.
-
 > **Missing data.** Individuals with much missing data make the MCMC
-> unstable. Remove them with `EXCLUDE` or `MAX_MISSING_IND`. In the
-> original analysis, five individuals with much missing data were removed
-> before the runs mixed well.
+> unstable. In the original analysis, five individuals with much missing
+> data had to be removed before the runs worked well. Check the missing data
+> per individual ([03_filtering](../03_filtering/#4-filter)) and, if
+> needed, make a VCF without them.
 
-## 3. Run
+## 2. Run the cross-validation and the spatial runs
 
-Edit the settings of `run_construct.R`:
-
-```r
-VCF       <- "filtered/my_data-miss9-maf1-th100.recode.vcf"
-COORDS    <- "coords_individuals.txt"
-K_MAX     <- 5
-XVAL_REPS <- 10
-XVAL_ITER <- 1e4
-N_CORES   <- 16
-```
+Edit `scripts/run_construct.R`: change the folder in `setwd()` and the
+number of processors (`makeCluster(16, ...)` and `n.nodes = 16`). Then run
+it on the server:
 
 ```bash
-Rscript scripts/run_construct.R
+byobu
+conda activate r-popgen
+cd ~/my_project/08_construct
+Rscript scripts/run_construct.R 2>&1 | tee results/run_construct.log
 ```
 
-```
-80 samples, 8120 loci
-Cross-validation: K = 1..5, 10 replicates. Start: ...
-```
+The script:
 
-The script does two steps (each can be switched off with `RUN_XVAL` /
-`RUN_FULL`):
-
-1. **Cross-validation** (`x.validation`): for each replicate, 90% of the
-   loci are used to fit the model and the other 10% to measure how well it
-   predicts them (predictive accuracy), for spatial and non-spatial
-   models, K = 1–5. This is the slow part: **several hours** with 16 cores
-   for ~80 individuals.
-2. **Full runs** of each model and K, for the layer contributions and the
+1. calculates the **allele frequency** of each individual (0, 0.5, 1) from
+   the VCF, and the **geographic distances** between individuals from the
+   coordinates;
+2. runs the **cross-validation** (`x.validation`): in each replicate, 90%
+   of the SNPs are used to fit the model and the other 10% to test how well
+   it predicts them (the **predictive accuracy**), for the spatial and
+   non-spatial models, K = 1 to 5, 10 replicates. This is the slow part:
+   several hours with 16 processors for ~80 individuals;
+3. runs the **spatial model** for K = 1 to 5 with all the data, for the
    plots.
 
+Output in `results/`:
+
+| File | Content |
+|---|---|
+| `my_data_sp_xval_results.txt`, `my_data_nsp_xval_results.txt` | Predictive accuracy of the spatial and non-spatial models (rows: K, columns: replicates) |
+| `my_data_spK3_conStruct.results.Robj`, `..._data.block.Robj` | Results of the spatial run with K = 3 (one pair of files per K) |
+| `my_data_spK3_trace.plots.chain_1.pdf`, ... | Plots made by each run |
+
 > **Check the MCMC.** conStruct uses Stan. Warnings such as `divergent
-> transitions`, `R-hat > 1.05` or `Effective Samples Size (ESS) is too low`
-> mean the chain has not converged: increase `FULL_ITER`, and check for
-> individuals with much missing data. Look at the trace plots written by
-> each run (`*trace.plots*.pdf`).
+> transitions`, `The largest R-hat is ...` or `Effective Samples Size (ESS)
+> is too low` mean that the chain has not converged. Increase `n.iter` in
+> the full runs, and check for individuals with much missing data. Look at
+> the trace plots (`*trace.plots*.pdf`): they should look like
+> "hairy caterpillars", with no trend.
 
-## 4. Results
+## 3. Results (RStudio)
 
-```r
-OUTDIR <- "construct"
-K_MAX  <- 5
-K_PLOT <- 3
-```
+Copy the `results/` folder to your computer, open
+`scripts/plot_construct.R` in RStudio, change the folder in `setwd()` and
+run it block by block.
 
-```bash
-Rscript scripts/plot_construct.R
-```
+### 3.1 Spatial or non-spatial? How many layers?
 
-### 4.1 Spatial or non-spatial? How many layers?
-
-`_xval.pdf` shows the predictive accuracy (higher = better) for each K and
-model. `_xval_ttests.txt` has paired t-tests:
+The first plot shows the mean predictive accuracy (higher = better) for each
+K, for the spatial (blue) and non-spatial (green) models; the second shows
+the 95% confidence intervals of the spatial model. The t-tests compare two
+values of K, or the two models, paired by replicate:
 
 ```
-Spatial K=2 vs K=1: mean difference = 901.92, t = 33.20, p = 5.03e-11
-...
-K=1 spatial vs non-spatial: mean difference = ..., p = ...
+Paired t-test
+data:  sp[2, ] and sp[1, ]
+t = 33.2, df = 9, p-value = 5.025e-11
+mean difference 901.9202
 ```
 
-- **Spatial > non-spatial** (especially at low K): geographic distance
-  explains part of the differentiation (IBD). In the original analysis the
-  spatial models had clearly higher predictive accuracy.
-- **Choosing K**: the predictive accuracy usually increases quickly and
-  then levels off. Choose the smallest K after which adding layers gives
-  little improvement. A significant t-test is not enough: with many loci,
-  tiny improvements are significant.
+(Example from the original analysis: K = 2 is better than K = 1.)
 
-> The conStruct vignette computes the confidence interval with
+- **Spatial better than non-spatial** (especially at low K): the geographic
+  distance explains part of the differentiation (IBD). In the original
+  analysis, the spatial models had clearly higher predictive accuracy.
+- **Choosing K**: the predictive accuracy usually increases quickly and then
+  levels off. Choose the smallest K after which adding layers gives little
+  improvement. A significant t-test is not enough: with many SNPs, tiny
+  improvements are significant.
+
+> The conStruct vignette calculates the confidence interval with
 > `sd(x)/length(x)`. The standard error is `sd(x)/sqrt(length(x))`, used in
-> `plot_construct.R`; the intervals are therefore wider than in the
-> vignette.
+> the script, so the intervals are wider than in the vignette.
 
-### 4.2 Layer contributions
+### 3.2 Layer contributions
 
-`_layer_contributions.pdf`: for each K, how much each layer contributes
-to the total covariance. A layer that contributes very little (e.g. < 1%)
-is not needed: the best K is the number of layers with a real
-contribution.
+The bar plot shows, for each K, how much each layer contributes to the
+total covariance. A layer that contributes very little (e.g. < 1%) is not
+needed: the best K is the number of layers with a real contribution. In the
+original analysis, all layers up to K = 5 had a real contribution.
 
-### 4.3 Admixture plots
+### 3.3 Admixture plots
 
-For `K_PLOT`:
+Set `K <- ` to your K and run the last block:
 
-- `_spK3_structure.pdf`: proportions of each layer per individual, like a
-  STRUCTURE plot.
-- `_spK3_pies.pdf`: the same proportions as pie charts on the map.
+- `make.structure.plot`: proportion of each layer in each individual, like
+  a STRUCTURE plot;
+- `make.admix.pie.plot`: the same proportions as pies on the map. Change
+  `radii` to change the size of the pies.
 
-## 5. Interpretation
+Save the plots with **Export** in the Plots panel.
+
+## 4. Interpretation
 
 - If the spatial model with **K = 1** is about as good as higher K, the
-  structure is mostly continuous (IBD), and the clusters of
-  STRUCTURE/DAPC may be artefacts of IBD.
+  structure is mostly continuous (IBD), and the clusters of STRUCTURE or
+  DAPC may be artefacts of IBD.
 - If several spatial layers are needed, there are discrete groups **in
   addition to** IBD.
-- Compare the layers with the clusters of [06](../06_pca_dapc/) and
-  [07](../07_structure/), and with the migration barriers of EEMS
-  ([09](../09_eems/)).
+- Compare the layers with the clusters of [05](../05_pca_dapc/)–[07](../07_snmf_tess3/),
+  and with the migration barriers of EEMS ([09](../09_eems/)).
+
+## Next step
+
+Where are the barriers to gene flow? [09_eems](../09_eems/).
+
+## More information
+
+- conStruct vignettes, in R: `vignette(package = "conStruct")`, or online:
+  <https://cran.r-project.org/package=conStruct> — format-data,
+  run-conStruct, visualize-results, model-comparison (cross-validation and
+  layer contributions, the basis of these scripts).
+- conStruct on GitHub: <https://github.com/gbradburd/conStruct>
 
 ## References
 
 - Bradburd GS, Coop GM, Ralph PL (2018) Inferring continuous and discrete
   population genetic structure across space. *Genetics* 210: 33–52.
-- conStruct vignettes: `vignette(package = "conStruct")` — format-data,
-  run-conStruct, visualize-results, model-comparison.
