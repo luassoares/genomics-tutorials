@@ -13,8 +13,17 @@ Write your answers in your notes, so you can repeat the analysis.
 In RStudio (once):
 
 ```r
-install.packages(c("vcfR", "adegenet", "ggplot2"))
+install.packages(c("vcfR", "adegenet", "dartR", "directlabels", "plotly", "htmlwidgets"))
 ```
+
+`dartR` makes the PCA and the plots; `directlabels` is needed by its plot
+function, and `plotly`/`htmlwidgets` by the interactive and 3D plots.
+
+> **dartR or dartR.base?** The `dartR` package is no longer developed: its
+> functions continue in `dartR.base` (part of the dartRverse), with the
+> same names (`gl.pcoa`, `gl.pcoa.plot`). If `install.packages("dartR")`
+> fails, use `install.packages("dartR.base")` and `library(dartR.base)`
+> instead.
 
 ## Prepare the folder
 
@@ -55,84 +64,96 @@ Open RStudio, create a new script (File → New File → R Script), and run each
 block with Ctrl+Enter (Cmd+Enter on Mac).
 
 ```r
-library(vcfR)
-library(adegenet)
-library(ggplot2)
-
 setwd("~/my_project/05_pca_dapc")      # change to your folder
+library(vcfR)
+library(dartR)
 
-# read the VCF and convert it to a genlight object (adegenet format)
-vcf <- read.vcfR("data/my_data-miss0.9-maf0.01-th100.recode.vcf")
-gl  <- vcfR2genlight(vcf)
+# read the VCF and convert it to a genlight object (the format of adegenet and dartR)
+my_data <- read.vcfR("data/my_data-miss0.9-maf0.01-th100.recode.vcf")
+my_data_gl <- vcfR2genlight(my_data)
 
 # add the population of each individual, from the popmap
-popmap <- read.table("data/popmap.txt", header = FALSE, col.names = c("pop", "id"))
-pop(gl) <- popmap$pop[match(indNames(gl), popmap$id)]
+popmap <- read.table("data/popmap.txt", header = FALSE, col.names = c("POP", "ID"))
+popmap <- popmap[match(indNames(my_data_gl), popmap$ID), ]   # same order as the VCF
+my_data_gl$other$ind.metrics <- popmap
+pop(my_data_gl) <- my_data_gl$other$ind.metrics$POP
 
-gl                 # summary: number of individuals, SNPs and populations
-table(pop(gl))     # individuals per population
+my_data_gl                 # summary: number of individuals, SNPs and populations
+table(pop(my_data_gl))     # individuals per population
 ```
 
-If `table(pop(gl))` shows `NA`, some sample IDs of the VCF are not in the
-popmap (check the names, and Windows line endings, see
-[00_setup](../00_setup/#21-files-used-in-many-tutorials)).
+The `match()` line puts the popmap in the same order as the samples of the
+VCF. Without it, the populations are given by the order of the lines, and
+if the two files are not in the same order, individuals get the wrong
+population without any error. If `table(pop(my_data_gl))` shows `NA`, some
+sample IDs of the VCF are not in the popmap (check the names, and Windows
+line endings, see [00_setup](../00_setup/#21-files-used-in-many-tutorials)).
 
 ## 3. PCA
 
 ```r
-pca <- glPca(gl)
+pca1 <- gl.pcoa(my_data_gl)
 ```
 
-R shows a bar plot of the eigenvalues (the variance explained by each PC)
-and asks in the Console:
+`gl.pcoa` runs the PCA and shows a diagnostic plot with the **percentage of
+the variation explained by each axis**. With many SNPs and closely related
+populations, the first axis often explains only a few % of the variation:
+this is normal.
 
-```
-Select the number of axes:
-```
-
-Type the number of PCs to keep, e.g. `10`, and press Enter. The number only
-affects how many PCs are saved (you will plot the first 2–3).
-
-How much variance each PC explains:
+### 3.1 Plot
 
 ```r
-var_pc <- 100 * pca$eig / sum(pca$eig)
-round(var_pc[1:5], 1)      # % of variance of PC1 to PC5
+gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 1, yaxis = 2)
+gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 1, yaxis = 3)
 ```
 
-With many SNPs and closely related populations, PC1 often explains only a
-few % of the variance: this is normal.
+The first plot shows PCA axis 1 × axis 2, with the individuals colored and
+labelled by population; the second, axis 1 × axis 3. The third axis can
+separate groups that overlap on the first two (in the original analysis,
+axis 3 separated two species that overlapped on axes 1 and 2).
 
-Plot PC1 × PC2, colored by population:
+Save the plots with **Export → Save as Image / Save as PDF** in the Plots
+panel.
+
+### 3.2 Interactive plot
 
 ```r
-pca_df <- data.frame(pca$scores, population = pop(gl))
-
-ggplot(pca_df, aes(x = PC1, y = PC2, fill = population)) +
-  geom_point(shape = 21, size = 3) +
-  labs(x = paste0("PC1 (", round(var_pc[1], 1), "%)"),
-       y = paste0("PC2 (", round(var_pc[2], 1), "%)")) +
-  theme_bw()
+gl.pcoa.plot(pca1, my_data_gl, interactive = TRUE, xaxis = 1, yaxis = 2)
 ```
 
-Change `PC2` to `PC3` to see PC1 × PC3: the third axis can separate groups
-that overlap on PC1–PC2 (in the original analysis, PC3 separated two
-species that overlapped on PC1–PC2).
+The plot opens in the **Viewer** panel. Move the mouse over a point to see
+the name of the individual and its population: this is the easiest way to
+identify individuals that are far from their population. Click a population
+in the legend to hide or show it.
 
-Save the plot with **Export → Save as Image / Save as PDF** in the Plots
-panel, or with `ggsave("results/PCA_PC1_PC2.pdf")` after the plot.
+### 3.3 3D plot
+
+```r
+gl.pcoa.plot(pca1, my_data_gl, xaxis = 1, yaxis = 2, zaxis = 3)
+```
+
+Adding `zaxis` makes an interactive **3D plot** of the first three axes:
+turn it with the mouse to see how the groups separate in three dimensions.
+
+To keep the interactive and 3D plots, use **Export → Save as Web Page** in
+the Viewer panel, or:
+
+```r
+pca_3d <- gl.pcoa.plot(pca1, my_data_gl, xaxis = 1, yaxis = 2, zaxis = 3)
+htmlwidgets::saveWidget(pca_3d, "results/PCA_3D.html")
+```
+
+The `.html` file opens in any web browser, and can be shared with
+colleagues.
 
 > **Check:** an individual far from its population may be a mislabelled
 > sample, a hybrid, or a sample with much missing data. Check its missing
 > data ([03_filtering](../03_filtering/#4-filter)) before interpreting it.
 
-The `dartR` package has similar functions (`gl.pcoa` and `gl.pcoa.plot`),
-used in the original analysis.
-
 ## 4. DAPC step 1: find the clusters
 
 ```r
-grp <- find.clusters(gl, max.n.clust = 15)
+grp <- find.clusters(my_data_gl, max.n.clust = 15)
 ```
 
 `max.n.clust` is the largest number of clusters tested. Set it a bit higher
@@ -172,8 +193,8 @@ How to choose:
 Then see how the populations fall into the clusters:
 
 ```r
-table(pop(gl), grp$grp)
-table.value(table(pop(gl), grp$grp), col.lab = paste("cluster", 1:length(levels(grp$grp))))
+table(pop(my_data_gl), grp$grp)
+table.value(table(pop(my_data_gl), grp$grp), col.lab = paste("cluster", 1:length(levels(grp$grp))))
 ```
 
 Rows are populations, columns are clusters: does each population fall into
@@ -193,7 +214,7 @@ Run a first DAPC with many PCs, answering the questions with all PCs and
 all discriminant functions:
 
 ```r
-dapc_test <- dapc(gl, grp$grp)
+dapc_test <- dapc(my_data_gl, grp$grp)
 ```
 
 ```
@@ -216,7 +237,7 @@ the best value (`a$best`). In the original analysis: K = 8 and 12 PCs.
 Run the DAPC again:
 
 ```r
-dapc1 <- dapc(gl, grp$grp)
+dapc1 <- dapc(my_data_gl, grp$grp)
 ```
 
 ```
@@ -231,8 +252,8 @@ To repeat the analysis without the questions, give the answers as
 arguments:
 
 ```r
-grp   <- find.clusters(gl, max.n.clust = 15, n.pca = 150, n.clust = 8)
-dapc1 <- dapc(gl, grp$grp, n.pca = 12, n.da = 7)
+grp   <- find.clusters(my_data_gl, max.n.clust = 15, n.pca = 150, n.clust = 8)
+dapc1 <- dapc(my_data_gl, grp$grp, n.pca = 12, n.da = 7)
 ```
 
 `find.clusters` starts from random positions, so the cluster numbers can
@@ -263,7 +284,7 @@ compoplot(dapc1, posi = "bottomright", txt.leg = paste("Cluster", 1:8),
 **Table** with the cluster and membership probabilities of each individual:
 
 ```r
-memb <- data.frame(individual = indNames(gl), population = pop(gl),
+memb <- data.frame(individual = indNames(my_data_gl), population = pop(my_data_gl),
                    cluster = dapc1$assign, round(dapc1$posterior, 3))
 write.csv(memb, "results/DAPC_K8_membership.csv", row.names = FALSE)
 ```
@@ -291,6 +312,7 @@ Model-based clustering: [06_structure](../06_structure/).
   the a-score, cross-validation with `xvalDapc`, and how to customise the
   plots): <https://adegenet.r-forge.r-project.org/files/tutorial-dapc.pdf>
 - adegenet tutorials: <https://adegenet.r-forge.r-project.org/>
+- dartR tutorials and documentation: <https://green-striped-gecko.github.io/dartR/>
 - Introduction to population structure in R (DAPC and sNMF, with maps):
   <https://connor-french.github.io/intro-pop-structure-r/>
 
@@ -301,6 +323,12 @@ Model-based clustering: [06_structure](../06_structure/).
   structured populations. *BMC Genetics* 11: 94.
 - Jombart T, Ahmed I (2011) adegenet 1.3-1: new tools for the analysis of
   genome-wide SNP data. *Bioinformatics* 27: 3070–3071.
+- Gruber B, Unmack PJ, Berry OF, Georges A (2018) dartR: an R package to
+  facilitate analysis of SNP data generated from reduced representation
+  genome sequencing. *Molecular Ecology Resources* 18: 691–699.
+- Mijangos JL, Gruber B, Berry O, Pacioni C, Georges A (2022) dartR v2: an
+  accessible genetic analysis platform for conservation, ecology and
+  agriculture. *Methods in Ecology and Evolution* 13: 2150–2158.
 - Knaus BJ, Grünwald NJ (2017) vcfR: a package to manipulate and visualize
   variant call format data in R. *Molecular Ecology Resources* 17: 44–53.
 - Miller JM, Cullingham CI, Peery RM (2020) The influence of a priori
