@@ -108,6 +108,11 @@ run it line by line. It:
 3. checks that the matrix is valid (exactly **one** positive eigenvalue);
 4. writes the coordinates in the same order as the VCF.
 
+The script also has `bed2diffs_v1`, which uses for each pair of
+individuals only the SNPs genotyped in both (used in the original
+analysis). Both are in the EEMS documentation; if the check in step 3
+fails with v1, use v2.
+
 Write down `nIndiv` and `nSites` (number of individuals and SNPs, printed
 by the script): you need them for the parameter file. In the original
 analysis: 131 individuals and 13,179 SNPs.

@@ -84,7 +84,9 @@ The script:
 
 1. calculates the **allele frequency** of each individual (0, 0.5, 1) from
    the VCF, and the **geographic distances** between individuals from the
-   coordinates;
+   coordinates. Alternatively, as in the original analysis, the frequencies
+   can be read from the STRUCTURE file of [06](../06_structure/#2-input-files)
+   with `structure2conStruct` (commented lines in the script);
 2. runs the **cross-validation** (`x.validation`): in each replicate, 90%
    of the SNPs are used to fit the model and the other 10% to test how well
    it predicts them (the **predictive accuracy**), for the spatial and

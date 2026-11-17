@@ -25,6 +25,16 @@ freqs <- t(freqs)                            # individuals x SNPs
 rownames(freqs) <- colnames(gt)
 dim(freqs)
 
+# Alternative (as in the original analysis): read the STRUCTURE file made in
+# 06_structure (by PGDSpider or vcf2structure.py) instead of the VCF.
+# The individuals are then in the order of the STRUCTURE file: put the
+# coordinates in that order (section 2), using the IDs in its first column.
+# freqs <- structure2conStruct(infile = "data/my_data.str", onerowperind = FALSE,
+#                              start.loci = 3, start.samples = 2, missing.datum = -9,
+#                              outfile = "results/my_data_construct")
+# str_ids <- read.table("data/my_data.str", skip = 1)[c(TRUE, FALSE), 1]
+# rownames(freqs) <- str_ids
+
 # 2. Coordinates and geographic distances -----------------------------------
 coords_table <- read.table("data/coords.txt", header = FALSE, col.names = c("id", "lon", "lat"))
 coords_table <- coords_table[match(rownames(freqs), coords_table$id), ]   # same order as the VCF

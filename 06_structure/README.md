@@ -9,7 +9,7 @@ in R.
 
 | Script | What it does |
 |---|---|
-| [`scripts/vcf2structure.py`](scripts/vcf2structure.py) | Converts the VCF to the STRUCTURE and fastSTRUCTURE input files, and writes the population labels |
+| [`scripts/vcf2structure.py`](scripts/vcf2structure.py) | Converts the VCF to the STRUCTURE and fastSTRUCTURE input files, and writes the population labels (or use PGDSpider, section 2.2) |
 | [`scripts/plot_structure.R`](scripts/plot_structure.R) | pophelper in RStudio: Evanno method, alignment of the runs and bar plots |
 
 ## Install
@@ -61,6 +61,11 @@ running both and comparing them is a good check.
 
 ## 2. Input files
 
+Convert the VCF with **one** of the two options below. Both make files
+with the same columns, so the rest of the tutorial is the same.
+
+### 2.1 Option A: script
+
 ```bash
 conda activate structure
 python3 scripts/vcf2structure.py --vcf data/my_data-miss0.9-maf0.01-th100.recode.vcf \
@@ -85,9 +90,84 @@ The individuals are ordered by population (in the order of the popmap), so
 in the bar plots each population is one block. Write down `NUMINDS` and
 `NUMLOCI`: you need them in the next step.
 
-> Other converters (PGDSpider, `dartR::gl2structure`) also work, but the
-> columns of their output differ: check that the settings in `mainparams`
-> (`LABEL`, `POPDATA`, `EXTRACOLS`, `MARKERNAMES`) match the file.
+### 2.2 Option B: PGDSpider
+
+PGDSpider converts between many formats; it was used in the original
+analysis. It has a graphical version (easiest on your own computer) and a
+command-line version (for the server). Download it from
+<http://www.cmpg.unibe.ch/software/PGDSpider/>, or on the server:
+`conda create -n pgdspider pgdspider "openjdk=8"` (PGDSpider needs Java 8).
+
+PGDSpider needs a population file with the columns `<sample ID> <tab>
+<population>` (the opposite order to our popmap):
+
+```bash
+awk -v OFS='\t' '{print $2, $1}' data/popmap.txt > data/popmap_pgdspider.txt
+```
+
+**Graphical version:**
+
+1. *Data input file*: select the VCF; *Data input file format*: **VCF**.
+2. *Data output file*: `my_data.str`; *Data output file format*:
+   **STRUCTURE**.
+3. Click **Create/Edit SPID file** and answer the questions:
+   - *Do you want to include a file with population definitions?* **Yes**,
+     and select `popmap_pgdspider.txt`;
+   - *What is the ploidy of the data?* **Diploid**;
+   - *Do you want to include non-polymorphic SNPs?* **No**;
+   - *Specify which data type should be included*: **SNP**;
+   - *Do you want to include inter-marker distances?* **No**;
+   - *Save more specific fastSTRUCTURE format?* **No** for STRUCTURE.
+   Leave the other questions empty. Save the SPID file, so you can use it
+   again.
+4. Click **Convert**.
+
+For fastSTRUCTURE, convert again with *Save more specific fastSTRUCTURE
+format?* **Yes**, to `my_data_fast.str`.
+
+**Command line:** save the answers above in a SPID file, e.g.
+`data/vcf_to_structure.spid`:
+
+```
+PARSER_FORMAT=VCF
+VCF_PARSER_POP_QUESTION=true
+VCF_PARSER_POP_FILE_QUESTION=/home/<user>/my_project/06_structure/data/popmap_pgdspider.txt
+VCF_PARSER_PLOIDY_QUESTION=DIPLOID
+VCF_PARSER_MONOMORPHIC_QUESTION=false
+VCF_PARSER_PL_QUESTION=false
+VCF_PARSER_EXC_MISSING_LOCI_QUESTION=true
+WRITER_FORMAT=STRUCTURE
+STRUCTURE_WRITER_LOCI_DISTANCE_QUESTION=false
+STRUCTURE_WRITER_DATA_TYPE_QUESTION=SNP
+STRUCTURE_WRITER_FAST_FORMAT_QUESTION=false
+```
+
+```bash
+conda activate pgdspider
+java -Xmx4g -jar $CONDA_PREFIX/share/pgdspider-*/PGDSpider2-cli.jar \
+    -inputfile data/my_data-miss0.9-maf0.01-th100.recode.vcf -inputformat VCF \
+    -outputfile data/my_data.str -outputformat STRUCTURE -spid data/vcf_to_structure.spid
+```
+
+(For fastSTRUCTURE, copy the SPID file with
+`STRUCTURE_WRITER_FAST_FORMAT_QUESTION=true` and write `my_data_fast.str`.)
+
+The PGDSpider file has the individuals in the order of the VCF. Count
+`NUMINDS` and `NUMLOCI` for `mainparams`, and make the label file for
+pophelper (population names in the same order as the file):
+
+```bash
+echo $(( $(wc -l < data/my_data.str) / 2 ))                     # NUMINDS (lines minus the header, / 2)
+head -1 data/my_data.str | wc -w                                # NUMLOCI
+awk 'NR==FNR {pop[$2]=$1; next} FNR==1 {print "population"} FNR>1 && FNR%2==0 {print pop[$1]}' \
+    data/popmap.txt data/my_data.str > data/my_data_labels.txt
+```
+
+structure_threader can also show population names in its plots with
+`--pop`; with PGDSpider files you can leave this option out.
+
+> If a file was made on Windows, convert it with `dos2unix` before running
+> STRUCTURE.
 
 ## 3. STRUCTURE
 

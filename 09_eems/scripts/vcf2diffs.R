@@ -37,7 +37,22 @@ bed2diffs_v2 <- function(Geno) {
   SelfSim %*% t(vector1s) + vector1s %*% t(SelfSim) - 2 * Sim
 }
 
+# (bed2diffs_v1: for each pair, only the SNPs genotyped in both individuals;
+#  used in the original analysis. Slower with many individuals.)
+bed2diffs_v1 <- function(Geno) {
+  nIndiv <- nrow(Geno)
+  Diffs <- matrix(0, nIndiv, nIndiv)
+  for (i in seq(nIndiv - 1)) {
+    for (j in seq(i + 1, nIndiv)) {
+      Diffs[i, j] <- mean((Geno[i, ] - Geno[j, ])^2, na.rm = TRUE)
+      Diffs[j, i] <- Diffs[i, j]
+    }
+  }
+  Diffs
+}
+
 diffs <- round(bed2diffs_v2(geno), 6)
+# diffs <- round(bed2diffs_v1(geno), 6)   # alternative: v1
 
 # check: a valid matrix has exactly one positive eigenvalue
 sum(eigen(diffs)$values > 0)              # must be 1
