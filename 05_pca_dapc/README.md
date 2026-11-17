@@ -104,11 +104,11 @@ this is normal.
 
 ```r
 gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 1, yaxis = 2)
-gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 1, yaxis = 3)
+gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 2, yaxis = 3)
 ```
 
 The first plot shows PCA axis 1 × axis 2, with the individuals colored and
-labelled by population; the second, axis 1 × axis 3. The third axis can
+labelled by population; the second, axis 2 × axis 3. The third axis can
 separate groups that overlap on the first two (in the original analysis,
 axis 3 separated two species that overlapped on axes 1 and 2).
 

@@ -1,5 +1,8 @@
 # 00 — Setup: conda and how to organize your project
 
+If you are new to the terminal, read [00_linux_basics](../00_linux_basics/)
+first.
+
 Before starting, prepare two things:
 
 1. **conda**, to install the programs without administrator (root) access,
@@ -175,8 +178,9 @@ the commands you ran, the versions of the programs and what you decided
 
 ## 3. Long runs
 
-Run long analyses inside `byobu`, `tmux` or `screen`, so they keep running
-if the connection drops:
+Run long analyses inside `byobu` (see
+[00_linux_basics](../00_linux_basics/#5-byobu-keep-analyses-running)), so
+they keep running if the connection drops:
 
 ```bash
 byobu                # start (or reattach)

@@ -14,6 +14,7 @@ next.
 
 | # | Tutorial | Question |
 |---|---|---|
+| 00 | [Linux basics](00_linux_basics/) | How to use the terminal: main commands, byobu, the PATH |
 | 00 | [Setup](00_setup/) | How to install the programs (conda) and organize the project folders |
 | 01 | [Raw reads](01_raw_reads/) | Are the reads good? Remove barcodes, adapters and low-quality bases |
 | 02 | [Mapping and SNP calling](02_snp_calling/) | From clean reads to a VCF (reference genome, or Stacks de novo) |
@@ -40,7 +41,8 @@ More tutorials will be added.
 
 ## How to use
 
-1. Read [00_setup](00_setup/): install conda and create the project
+1. New to the terminal? Start with [00_linux_basics](00_linux_basics/).
+   Then read [00_setup](00_setup/): install conda and create the project
    folders.
 2. Each tutorial starts with an **Install** section (the programs needed for
    that analysis only) and **Prepare the folder** (which input files go in
