@@ -106,6 +106,10 @@ cross-entropy**, or where the curve stops decreasing (the "elbow"). As
 with STRUCTURE, look at the results of two or three values of K. In the
 original analysis (131 individuals) K = 9 was chosen.
 
+![sNMF cross-entropy](images/snmf_cross_entropy.png)
+
+*Example: sNMF cross-entropy for K = 1 to 16. The lowest value is at K = 7.*
+
 ### 2.4 Table, bar plot and map
 
 Set `K <- ` to your K and run blocks 5 to 7:
@@ -124,6 +128,14 @@ The individuals of the same site have the same coordinates: with one pie per
 individual, they would be drawn on top of each other. The script therefore
 averages the individuals of each site. Change the size of the pies with
 `r = 0.05` (in degrees) and the colors with `colors`.
+
+![sNMF bar plot](images/snmf_barplot.png)
+
+*Example: sNMF ancestry coefficients (bar plot).*
+
+![sNMF map](images/snmf_map.png)
+
+*Example: map with the most likely cluster of each individual.*
 
 ## 3. TESS3
 
@@ -148,6 +160,10 @@ written to `results/` with the prefix `tess3_`.
 > **Colors.** The cluster numbers are arbitrary and differ between sNMF and
 > TESS3 (and between K). To give the same color to the same group in both
 > maps, change the order of `colors`, or edit the final figure.
+
+![TESS3 cross-validation](images/tess3_cross_validation.png)
+
+*Example: TESS3 cross-validation score. It keeps going down, without a clear minimum; in this case look for where the curve flattens (the "elbow").*
 
 ## 4. Interpretation
 

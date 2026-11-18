@@ -1,4 +1,4 @@
-# 01 — SVDQuartets with PAUP\*
+# 03 — SVDQuartets with PAUP\*
 
 Infer a lineage tree (individuals as tips) or a species tree (populations as
 tips) from SNP data under the multispecies coalescent, with bootstrap
@@ -14,8 +14,110 @@ Original tutorial (Malinsky & Matschiner):
 | [`scripts/run_SVDQuartets.sh`](scripts/run_SVDQuartets.sh) | Writes the PAUP\* batch file and runs SVDQuartets: best tree + bootstrap consensus, rooted on an outgroup |
 | [`scripts/add_support_and_pops.py`](scripts/add_support_and_pops.py) | Adds bootstrap support to the trees (PAUP\* does not save it) and makes versions with population names |
 
-**Requirements:** PAUP\*, vcftools (or bcftools), `vcf2phylip.py`, Python 3
-(see [Installing the tools](../#installing-the-tools)).
+## Install
+
+Install PAUP\* (in its own conda environment) and `vcf2phylip.py` as
+below. You also need vcftools or bcftools (the `phylo` environment of
+[01_splitstree](../01_splitstree/#install)).
+
+### PAUP\*
+
+#### The `libgfortran.so.4` error
+
+The Linux build of PAUP\* needs an old Fortran runtime (GCC 7). On recent
+Ubuntu versions (22.04 and later) it fails with:
+
+```
+error while loading shared libraries: libgfortran.so.4: cannot open shared object file: No such file or directory
+```
+
+Install the library in a conda environment:
+
+```bash
+conda create -n paup python=2.7
+conda activate paup
+conda install -c conda-forge libgfortran4
+ls $CONDA_PREFIX/lib | grep gfortran      # should list libgfortran.so.4
+```
+
+(With `sudo` on Ubuntu 18.04/20.04, `sudo apt install libgfortran4` also works.)
+
+#### Download
+
+Get the Linux build from <https://phylosolutions.com/paup-test/>:
+
+```bash
+mkdir -p ~/programs && cd ~/programs
+wget https://phylosolutions.com/paup-test/paup4a169_ubuntu64.gz    # check the newest version on the site
+gzip -d paup4a169_ubuntu64.gz       # .gz, not .zip: use gzip, not unzip
+chmod +x paup4a169_ubuntu64
+```
+
+PAUP\* test builds expire. If PAUP\* says the version has expired, download
+the newest one.
+
+Test it:
+
+```bash
+conda activate paup
+LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH ./paup4a169_ubuntu64
+```
+
+#### A `paup` command
+
+To call PAUP\* with just `paup`, from any folder and without activating the
+conda environment, create a small wrapper script. Run this **from the folder
+with the PAUP\* executable, with the `paup` environment active** (the script
+records the absolute paths):
+
+```bash
+conda activate paup
+cd ~/programs
+
+mkdir -p ~/bin
+cat > ~/bin/paup << EOF
+#!/bin/bash
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:\$LD_LIBRARY_PATH
+exec $(pwd)/paup4a169_ubuntu64 "\$@"
+EOF
+chmod +x ~/bin/paup
+cat ~/bin/paup        # should show absolute paths, not $CONDA_PREFIX
+```
+
+Add `~/bin` to your `PATH` (`~/.bashrc` for bash, `~/.zshrc` for zsh):
+
+```bash
+echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+which paup
+paup
+```
+
+> An `alias` would not work in scripts, `nohup` or job schedulers; a script
+> in the `PATH` does.
+
+### vcf2phylip.py
+
+```bash
+mkdir -p ~/programs && cd ~/programs
+git clone https://github.com/edgardomortiz/vcf2phylip.git
+python ~/programs/vcf2phylip/vcf2phylip.py -h
+```
+
+The original script and its documentation are at
+<https://github.com/edgardomortiz/vcf2phylip> (Ortiz 2019).
+
+
+
+## Prepare the folder
+
+```
+03_svdquartets/
+├── data/      my_data-out-miss0.9-maf0.01-th100.recode.vcf  (from 03_filtering, with outgroup)
+│              popmap.txt
+├── scripts/   run_SVDQuartets.sh, add_support_and_pops.py
+└── results/
+```
 
 ---
 
@@ -65,7 +167,7 @@ bcftools +prune -w 100bp -n 1 my_data.filtered.vcf -o my_data.th100.vcf
 ## 2. Convert the VCF to NEXUS
 
 ```bash
-python vcf2phylip.py -i my_data.th100.miss80.recode.vcf -p --nexus
+python ~/programs/vcf2phylip/vcf2phylip.py -i my_data.th100.miss80.recode.vcf -p --nexus
 ```
 
 - `-p`: do not write a PHYLIP file; `--nexus`: write a NEXUS file.
@@ -113,7 +215,7 @@ OUTDIR=results
 CONDA_ENV=paup
 
 # outgroup from the popmap...
-POPMAP=../01_popmap/popmap.txt
+POPMAP=data/popmap.txt
 OUTGROUP_POP=Outgroup1
 ID_PREFIX="Ind_"
 # ...or listed directly:
@@ -196,7 +298,7 @@ calculates them from the bootstrap trees (% of trees that contain each
 bipartition) and also writes versions with `<Population>_<ID>` tip names:
 
 ```bash
-python3 add_support_and_pops.py results/SVDQ_my_data ../01_popmap/popmap.txt
+python3 add_support_and_pops.py results/SVDQ_my_data data/popmap.txt
 ```
 
 | Output | Content |
@@ -215,6 +317,10 @@ one clade and the outgroup individuals appear at the base, possibly as more
 than one group. If FigTree shows the tree unrooted, select the outgroup
 branch and click **Reroot**.
 
+![SVDQuartets tree](images/svdquartets_tree.png)
+
+*Example: SVDQuartets lineage tree with bootstrap support, rooted in FigTree, with some clades highlighted.*
+
 ## 5. Interpretation
 
 - **Bootstrap support** is the % of bootstrap trees containing a clade.
@@ -226,6 +332,10 @@ branch and click **Reroot**.
 - SVDQuartets assumes no gene flow. Admixed individuals usually do not form
   clades and are placed among their parental populations, often with low
   support.
+
+## Next step
+
+Species tree with divergence times: [04_snapp](../04_snapp/).
 
 ## References
 

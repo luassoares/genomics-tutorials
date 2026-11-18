@@ -144,12 +144,20 @@ mean difference 901.9202
 > `sd(x)/length(x)`. The standard error is `sd(x)/sqrt(length(x))`, used in
 > the script, so the intervals are wider than in the vignette.
 
+![cross-validation](images/cross_validation.png)
+
+*Example (SCHE-GUA data): predictive accuracy for K = 1 to 5. Left: spatial (blue) and non-spatial (green) models; right: spatial model only. The spatial model is better, and the accuracy stops improving after K = 2–3.*
+
 ### 3.2 Layer contributions
 
 The bar plot shows, for each K, how much each layer contributes to the
 total covariance. A layer that contributes very little (e.g. < 1%) is not
 needed: the best K is the number of layers with a real contribution. In the
 original analysis, all layers up to K = 5 had a real contribution.
+
+![layer contributions](images/layer_contribution.png)
+
+*Example: layer contributions. From K = 3 on, the new layers add very little, so K = 2 is enough.*
 
 ### 3.3 Admixture plots
 
@@ -161,6 +169,14 @@ Set `K <- ` to your K and run the last block:
   `radii` to change the size of the pies.
 
 Save the plots with **Export** in the Plots panel.
+
+![structure plot](images/structure_plot_K2.png)
+
+*Example: admixture proportions for K = 2 (non-spatial model).*
+
+![pie map](images/pie_map_K2.png)
+
+*Example: the same result as pie charts on the map.*
 
 ## 4. Interpretation
 

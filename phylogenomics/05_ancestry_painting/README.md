@@ -1,4 +1,4 @@
-# 02 — Ancestry painting
+# 05 — Ancestry painting
 
 Test whether putative hybrids carry alleles of both putative parents, using
 sites where the two parents are fixed for different alleles. Each hybrid is
@@ -21,7 +21,22 @@ The Ruby scripts by M. Matschiner (`get_fixed_site_gts.rb`,
 `plot_fixed_site_gts.rb`) are downloaded automatically from the original
 tutorial.
 
-**Requirements:** Ruby, Python 3 (see [Installing the tools](../#installing-the-tools)).
+## Install
+
+```bash
+conda create -n painting ruby python=3.11
+conda activate painting
+```
+
+## Prepare the folder
+
+```
+05_ancestry_painting/
+├── data/      VCF with the putative hybrids and parents (from 03_filtering, not thinned)
+│              popmap.txt
+├── scripts/   count_fixed_differences.py, run_ancestry_painting.sh
+└── results/
+```
 
 ---
 
@@ -127,6 +142,10 @@ and `<scenario>.fixed.svg` (the painting), plus `ancestry_painting.out`.
 > The script removes them (`tr -d '\r'`). Check a file with
 > `file popmap.txt` ("with CRLF line terminators").
 
+![ancestry painting](images/ancestry_painting.png)
+
+*Example (SCHE-GUA data): each row is an individual, each column a site fixed between the two parental groups. Red and blue are homozygous for one or the other parent; a hybrid would show many heterozygous sites. Here the individuals clearly belong to one parent or the other.*
+
 ## 4. Interpretation
 
 - **Parents** are drawn in solid colours (by definition fixed).
@@ -140,4 +159,20 @@ and `<scenario>.fixed.svg` (the painting), plus `ancestry_painting.out`.
 The painting is only as good as the choice of parents: if the true parents
 were not sampled, or the parents are not differentiated, the method has
 little power. Allele-frequency methods such as Dsuite
-([03_dsuite](../03_dsuite/)) do not need fixed differences.
+([06_dsuite](../06_dsuite/)) do not need fixed differences.
+
+## Next step
+
+Test for gene flow between groups: [06_dsuite](../06_dsuite/).
+
+## More information
+
+- Analysis of introgression with SNP data (Malinsky & Matschiner), the
+  original tutorial with the Ruby scripts:
+  <https://github.com/millanek/tutorials/tree/master/analysis_of_introgression_with_snp_data>
+
+## References
+
+- Runemark A, Trier CN, Eroukhmanoff F, et al. (2018) Variation and
+  constraints in hybrid genome formation. *Nature Ecology & Evolution* 2:
+  549–556.

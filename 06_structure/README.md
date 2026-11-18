@@ -311,6 +311,10 @@ Copy the results to your computer if they are on a server:
    - choose the colors, then download the plot (*Download options*: size in
      cm, resolution, file type: PDF, PNG...).
 
+![STRUCTURE K2-6](images/structure_K2-6.png)
+
+*Example: STRUCTURE results for K = 2 to 6 (HIGHLAND data), plotted with the pophelper web app. Each bar is one individual; the white lines separate the populations.*
+
 ### 6.2 R (RStudio)
 
 Open `scripts/plot_structure.R` in RStudio, change the folder in `setwd()`

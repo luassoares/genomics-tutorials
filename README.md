@@ -33,9 +33,12 @@ In the folder [phylogenomics](phylogenomics/):
 
 | # | Tutorial | Question |
 |---|---|---|
-| 01 | [SVDQuartets](phylogenomics/01_svdquartets/) | How are the individuals or populations related? |
-| 02 | [Ancestry painting](phylogenomics/02_ancestry_painting/) | Are putative hybrids heterozygous at sites fixed between the parents? |
-| 03 | [Dsuite](phylogenomics/03_dsuite/) | Is there excess allele sharing (gene flow) between groups? |
+| 01 | [SplitsTree](phylogenomics/01_splitstree/) | A first look: network of the individuals (NeighborNet) |
+| 02 | [RAxML-ng](phylogenomics/02_raxml/) | Maximum-likelihood tree with bootstrap |
+| 03 | [SVDQuartets](phylogenomics/03_svdquartets/) | Lineage and species tree under the coalescent |
+| 04 | [SNAPP](phylogenomics/04_snapp/) | Species tree with divergence times |
+| 05 | [Ancestry painting](phylogenomics/05_ancestry_painting/) | Are putative hybrids heterozygous at sites fixed between the parents? |
+| 06 | [Dsuite](phylogenomics/06_dsuite/) | Is there excess allele sharing (gene flow) between groups? |
 
 More tutorials will be added.
 

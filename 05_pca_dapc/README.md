@@ -104,16 +104,20 @@ this is normal.
 
 ```r
 gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 1, yaxis = 2)
-gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 2, yaxis = 3)
+gl.pcoa.plot(pca1, my_data_gl, pop.labels = "pop", xaxis = 1, yaxis = 3)
 ```
 
 The first plot shows PCA axis 1 × axis 2, with the individuals colored and
-labelled by population; the second, axis 2 × axis 3. The third axis can
+labelled by population; the second, axis 1 × axis 3. The third axis can
 separate groups that overlap on the first two (in the original analysis,
 axis 3 separated two species that overlapped on axes 1 and 2).
 
 Save the plots with **Export → Save as Image / Save as PDF** in the Plots
 panel.
+
+![PCA](images/pca.png)
+
+*Example: PCA of the HIGHLAND data with `gl.pcoa.plot` (individuals coloured by population).*
 
 ### 3.2 Interactive plot
 
@@ -149,6 +153,10 @@ colleagues.
 > **Check:** an individual far from its population may be a mislabelled
 > sample, a hybrid, or a sample with much missing data. Check its missing
 > data ([03_filtering](../03_filtering/#4-filter)) before interpreting it.
+
+![3D PCA](images/pca_3d.png)
+
+*Example: the 3D PCA (axes 1, 2 and 3).*
 
 ## 4. DAPC step 1: find the clusters
 
@@ -200,6 +208,10 @@ table.value(table(pop(my_data_gl), grp$grp), col.lab = paste("cluster", 1:length
 Rows are populations, columns are clusters: does each population fall into
 one cluster? Are some merged, or split into several clusters?
 
+![BIC](images/bic.png)
+
+*Example: BIC versus number of clusters. The lowest BIC (the elbow) is at K = 8.*
+
 ## 5. DAPC step 2: describe the clusters
 
 ### 5.1 How many PCs? (a-score)
@@ -231,6 +243,10 @@ a$best
 
 The plot shows the a-score for different numbers of PCs; the red line is
 the best value (`a$best`). In the original analysis: K = 8 and 12 PCs.
+
+![a-score](images/ascore.png)
+
+*Example: a-score optimisation. The optimal number of PCs is written under the title (here 12).*
 
 ### 5.2 Final DAPC
 
@@ -288,6 +304,14 @@ memb <- data.frame(individual = indNames(my_data_gl), population = pop(my_data_g
                    cluster = dapc1$assign, round(dapc1$posterior, 3))
 write.csv(memb, "results/DAPC_K8_membership.csv", row.names = FALSE)
 ```
+
+![DAPC scatter](images/dapc_scatter.png)
+
+*Example: DAPC scatter plot, K = 8, 12 PCs. The insets show the PCA and DA eigenvalues that were kept.*
+
+![compoplot](images/compoplot.png)
+
+*Example: `compoplot`, the membership probability of each individual to the 8 clusters.*
 
 ## 7. Interpretation
 

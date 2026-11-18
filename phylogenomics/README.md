@@ -1,131 +1,37 @@
-# Phylogenomics and introgression
+# Part 2 — Phylogenomics and introgression
 
-Tutorials to infer the relationships between populations or species and to
-test for hybridization and gene flow, from a filtered VCF
-([03_filtering](../03_filtering/)).
+Tutorials to infer the relationships between individuals, populations and
+species, estimate divergence times, and test for hybridization and gene
+flow. They start from the filtered VCF of [03_filtering](../03_filtering/)
+and use the results of Part 1 (which groups exist) to define the tips and
+the hypotheses.
 
 | # | Tutorial | Question |
 |---|---|---|
-| 01 | [SVDQuartets](01_svdquartets/) | How are the individuals or populations related? |
-| 02 | [Ancestry painting](02_ancestry_painting/) | Are putative hybrids heterozygous at sites fixed between the parents? |
-| 03 | [Dsuite](03_dsuite/) | Is there excess allele sharing (gene flow) between groups? D statistics, f4-ratio, f-branch |
+| 01 | [SplitsTree](01_splitstree/) | Is the signal tree-like, or is there conflict (reticulation)? A first look with a network |
+| 02 | [RAxML-ng](02_raxml/) | Maximum-likelihood tree of the individuals (concatenated SNPs) |
+| 03 | [SVDQuartets](03_svdquartets/) | Lineage and species tree under the multispecies coalescent |
+| 04 | [SNAPP](04_snapp/) | Species tree with divergence times |
+| 05 | [Ancestry painting](05_ancestry_painting/) | Are putative hybrids heterozygous at sites fixed between the parents? |
+| 06 | [Dsuite](06_dsuite/) | Is there excess allele sharing (gene flow) between groups? D statistics, f4-ratio, f-branch |
 
-More tutorials will be added (RAxML-ng, IQ-TREE, SNAPP, SplitsTree, HyDe,
-ADMIXTOOLS, species delimitation).
+More tutorials will be added: HyDe, Dfoil and ADMIXTOOLS (introgression),
+SNaQ and PhyloNet (phylogenetic networks), IQ-TREE with concordance factors,
+and species delimitation (BPP, DELINEATE, HHSD, delimitR).
 
-These analyses need an **outgroup**: make the VCF with the outgroup samples
-(see [03_filtering](../03_filtering/#1-which-vcf-for-which-analysis)).
+## Before starting
 
-## Installing the tools
-
-Create a conda environment for these tutorials (see
-[00_setup](../00_setup/) for conda):
-
-```bash
-conda create -n phylo -c conda-forge -c bioconda vcftools bcftools ruby python=3.11 numpy pandas matplotlib
-conda activate phylo
-```
-
-### PAUP\*
-
-#### The `libgfortran.so.4` error
-
-The Linux build of PAUP\* needs an old Fortran runtime (GCC 7). On recent
-Ubuntu versions (22.04 and later) it fails with:
-
-```
-error while loading shared libraries: libgfortran.so.4: cannot open shared object file: No such file or directory
-```
-
-Install the library in a conda environment:
-
-```bash
-conda create -n paup python=2.7
-conda activate paup
-conda install -c conda-forge libgfortran4
-ls $CONDA_PREFIX/lib | grep gfortran      # should list libgfortran.so.4
-```
-
-(With `sudo` on Ubuntu 18.04/20.04, `sudo apt install libgfortran4` also works.)
-
-#### Download
-
-Get the Linux build from <https://phylosolutions.com/paup-test/>:
-
-```bash
-mkdir -p ~/programs && cd ~/programs
-wget https://phylosolutions.com/paup-test/paup4a169_ubuntu64.gz    # check the newest version on the site
-gzip -d paup4a169_ubuntu64.gz       # .gz, not .zip: use gzip, not unzip
-chmod +x paup4a169_ubuntu64
-```
-
-PAUP\* test builds expire. If PAUP\* says the version has expired, download
-the newest one.
-
-Test it:
-
-```bash
-conda activate paup
-LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH ./paup4a169_ubuntu64
-```
-
-#### A `paup` command
-
-To call PAUP\* with just `paup`, from any folder and without activating the
-conda environment, create a small wrapper script. Run this **from the folder
-with the PAUP\* executable, with the `paup` environment active** (the script
-records the absolute paths):
-
-```bash
-conda activate paup
-cd ~/programs
-
-mkdir -p ~/bin
-cat > ~/bin/paup << EOF
-#!/bin/bash
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:\$LD_LIBRARY_PATH
-exec $(pwd)/paup4a169_ubuntu64 "\$@"
-EOF
-chmod +x ~/bin/paup
-cat ~/bin/paup        # should show absolute paths, not $CONDA_PREFIX
-```
-
-Add `~/bin` to your `PATH` (`~/.bashrc` for bash, `~/.zshrc` for zsh):
-
-```bash
-echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
-source ~/.bashrc
-which paup
-paup
-```
-
-> An `alias` would not work in scripts, `nohup` or job schedulers; a script
-> in the `PATH` does.
-
-### Dsuite
-
-```bash
-cd ~/programs
-git clone https://github.com/millanek/Dsuite.git
-cd Dsuite
-make
-echo 'export PATH=$HOME/programs/Dsuite/Build:$PATH' >> ~/.bashrc
-source ~/.bashrc
-Dsuite          # shows the help
-```
-
-The f-branch plotting script is `~/programs/Dsuite/utils/dtools.py`.
-
-### vcf2phylip.py
-
-```bash
-wget https://raw.githubusercontent.com/millanek/tutorials/refs/heads/master/analysis_of_introgression_with_snp_data/src/vcf2phylip.py
-python vcf2phylip.py -h
-```
-
-The original script and its documentation are at
-<https://github.com/edgardomortiz/vcf2phylip> (Ortiz 2019).
-
+- **Install and folders**: as in Part 1 ([00_setup](../00_setup/)). Each
+  tutorial has its own **Install** section. Keep the analyses in a
+  `phylogenomics/` folder of your project, one folder per analysis with
+  `data/`, `scripts/` and `results/`.
+- **An outgroup** is needed to root the trees and for the D statistics. Make
+  a VCF **with the outgroup** samples in [03_filtering](../03_filtering/#1-which-vcf-for-which-analysis):
+  add them to `samples_keep.txt` and use another prefix, e.g.
+  `PREFIX=my_data-out` → `my_data-out-miss0.9-maf0.01-th100.recode.vcf`.
+- **Thinned or not**: the tree methods use the thinned VCF (one SNP per
+  locus); ancestry painting and Dsuite use a VCF that is not thinned (see
+  each tutorial).
 
 ## More information
 
@@ -137,10 +43,11 @@ These tutorials adapt and extend the tutorials of **Milan Malinsky** and
 - Analysis of introgression with SNP data:
   <https://github.com/millanek/tutorials/tree/master/analysis_of_introgression_with_snp_data>
 - Divergence time estimation with SNP data:
-  <https://github.com/millanek/tutorials/tree/master/divergence_time_estimation_with_snp_data>
-- Scripts from those tutorials (`vcf2phylip.py`, `get_fixed_site_gts.rb`,
-  `plot_fixed_site_gts.rb`) and from Dsuite (`dtools.py`) are downloaded from
-  their original repositories and are not included here.
+  <https://github.com/mmatschiner/tutorials/blob/master/divergence_time_estimation_with_snp_data/README.md>
+- Scripts from those tutorials (`get_fixed_site_gts.rb`,
+  `plot_fixed_site_gts.rb`, `snapp_prep.rb`), `vcf2phylip.py` and Dsuite's
+  `dtools.py` are downloaded from their original repositories and are not
+  included here.
 - Review of methods to detect introgression: Hibbins MS, Hahn MW (2022)
   Phylogenomic approaches to detecting and characterizing introgression.
   *Genetics* 220: iyab173.

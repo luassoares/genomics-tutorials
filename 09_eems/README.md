@@ -221,6 +221,14 @@ block by block.
 - **`plots$rdist03`**: genetic difference vs geographic distance. Under
   isolation by distance it increases linearly with distance.
 
+![MCMC trace](images/pilogl.png)
+
+*Example: trace of the log posterior. If it still goes up or down at the end, run longer.*
+
+![observed vs fitted](images/rdist.png)
+
+*Example: observed vs fitted dissimilarities between demes. The points should follow a line.*
+
 ### 5.2 Migration and diversity maps
 
 The script adds the country borders and the sampling sites (circles) to the
@@ -234,6 +242,14 @@ maps, and saves them in `results/`:
 - **`eems_diversity.pdf`** (effective diversity). In the original
   analysis, inland populations had higher diversity than populations at the
   edges of the range.
+
+![migration](images/mrates.png)
+
+*Example (HIGHLAND data): effective migration surface (log10 m). Blue = more migration than expected under isolation by distance, orange = barrier.*
+
+![diversity](images/qrates.png)
+
+*Example: effective diversity surface (log10 q).*
 
 ## 6. Interpretation
 

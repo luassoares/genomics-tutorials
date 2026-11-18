@@ -1,4 +1,4 @@
-# 03 — Dsuite: D statistics, f4-ratio and f-branch
+# 06 — Dsuite: D statistics, f4-ratio and f-branch
 
 Test for gene flow (introgression) between populations or individuals with
 ABBA-BABA statistics, using Dsuite.
@@ -14,8 +14,40 @@ Dsuite: <https://github.com/millanek/Dsuite>
 | [`scripts/make_dsuite_inputs.py`](scripts/make_dsuite_inputs.py) | Makes the SETS file and the guide tree from a popmap and an SVDQuartets tree |
 | [`scripts/summarize_dsuite.py`](scripts/summarize_dsuite.py) | Multiple-testing correction and summary of the significant trios |
 
-**Requirements:** Dsuite, Python 3 (see [Installing the tools](../#installing-the-tools)). A guide
-tree, e.g. from [01_svdquartets](../01_svdquartets/).
+## Install
+
+Dsuite is compiled from its source code:
+
+```bash
+conda create -n dsuite cxx-compiler make zlib python=3.11 numpy pandas matplotlib
+conda activate dsuite
+```
+
+### Dsuite
+
+```bash
+cd ~/programs
+git clone https://github.com/millanek/Dsuite.git
+cd Dsuite
+make
+echo 'export PATH=$HOME/programs/Dsuite/Build:$PATH' >> ~/.bashrc
+source ~/.bashrc
+Dsuite          # shows the help
+```
+
+The f-branch plotting script is `~/programs/Dsuite/utils/dtools.py`.
+
+
+## Prepare the folder
+
+```
+06_dsuite/
+├── data/      VCF with outgroup (from 03_filtering, not thinned)
+│              popmap.txt
+│              guide tree (e.g. from 03_svdquartets)
+├── scripts/   make_dsuite_inputs.py, summarize_dsuite.py
+└── results/
+```
 
 ---
 
@@ -75,7 +107,7 @@ fully resolved):
 
 ```bash
 python3 scripts/make_dsuite_inputs.py --popmap popmap.txt --outgroup-pop Outgroup1 \
-    --tree ../02_SVDQuartets/results/SVDQ_my_data_besttree_support.tre \
+    --tree ../03_svdquartets/results/SVDQ_my_data_besttree_support.tre \
     --out my_SETS
 ```
 
@@ -145,6 +177,10 @@ Read the plot as: the value in row *b* (a branch of the tree, left) and
 column *C* (a tip, top) is the excess allele sharing between branch *b* and
 *C*. Grey cells are comparisons that are not possible in the tree.
 
+![f-branch](images/fbranch.png)
+
+*Example: f-branch plot. Darker cells show more excess allele sharing between a branch of the tree (rows) and a population (columns); grey = test not possible.*
+
 ## 6. Multiple testing
 
 With many sets the number of trios is large, so the p-values must be
@@ -162,6 +198,10 @@ For each of `_tree`, `_BBAA` and `_Dmin`, the script:
 - lists the top trios;
 - writes `<prefix>_<kind>_BH.txt` with a `q_BH` column.
 
+![D heatmap](images/D_heatmap.png)
+
+*Example: heatmap of D statistics between pairs of populations (from the BBAA trios).*
+
 ## 7. Interpretation
 
 - **Compare the three orientations.** A signal significant with the tree
@@ -176,6 +216,10 @@ For each of `_tree`, `_BBAA` and `_Dmin`, the script:
   with caution.
 - To see where in the genome the signal is, use `Dsuite Dinvestigate` with
   the trios of interest (sliding windows).
+
+## Next step
+
+More introgression and network tutorials will be added (HyDe, Dfoil, ADMIXTOOLS, SNaQ, PhyloNet).
 
 ## References
 
