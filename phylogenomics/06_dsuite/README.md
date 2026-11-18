@@ -219,7 +219,7 @@ For each of `_tree`, `_BBAA` and `_Dmin`, the script:
 
 ## Next step
 
-More introgression and network tutorials will be added (HyDe, Dfoil, ADMIXTOOLS, SNaQ, PhyloNet).
+[07 — HyDe](../07_hyde/): test which populations or individuals are hybrids.
 
 ## References
 

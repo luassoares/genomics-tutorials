@@ -39,6 +39,10 @@ In the folder [phylogenomics](phylogenomics/):
 | 04 | [SNAPP](phylogenomics/04_snapp/) | Species tree with divergence times |
 | 05 | [Ancestry painting](phylogenomics/05_ancestry_painting/) | Are putative hybrids heterozygous at sites fixed between the parents? |
 | 06 | [Dsuite](phylogenomics/06_dsuite/) | Is there excess allele sharing (gene flow) between groups? |
+| 07 | [HyDe](phylogenomics/07_hyde/) | Is a population (or individual) a hybrid of two others? In what proportions? |
+| 08 | [Dfoil](phylogenomics/08_dfoil/) | In which direction did the genes flow? |
+| 09 | [ADMIXTOOLS 2](phylogenomics/09_admixtools/) | Admixture graph: how many admixture events, and where? |
+| 10 | [SNaQ](phylogenomics/10_snaq/) | Species network with hybrid edges |
 
 More tutorials will be added.
 

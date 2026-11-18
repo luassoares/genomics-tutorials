@@ -14,10 +14,13 @@ the hypotheses.
 | 04 | [SNAPP](04_snapp/) | Species tree with divergence times |
 | 05 | [Ancestry painting](05_ancestry_painting/) | Are putative hybrids heterozygous at sites fixed between the parents? |
 | 06 | [Dsuite](06_dsuite/) | Is there excess allele sharing (gene flow) between groups? D statistics, f4-ratio, f-branch |
+| 07 | [HyDe](07_hyde/) | Is a population (or individual) a hybrid of two others? In what proportions (γ)? |
+| 08 | [Dfoil](08_dfoil/) | In which direction did the genes flow? Five-taxon D statistics |
+| 09 | [ADMIXTOOLS 2](09_admixtools/) | Admixture graph: how many admixture events, and where? |
+| 10 | [SNaQ](10_snaq/) | Species network with hybrid edges, from quartet concordance factors |
 
-More tutorials will be added: HyDe, Dfoil and ADMIXTOOLS (introgression),
-SNaQ and PhyloNet (phylogenetic networks), IQ-TREE with concordance factors,
-and species delimitation (BPP, DELINEATE, HHSD, delimitR).
+More tutorials will be added: IQ-TREE with concordance factors, and
+species delimitation (BPP, DELINEATE, HHSD, delimitR).
 
 ## Before starting
 
@@ -31,7 +34,8 @@ and species delimitation (BPP, DELINEATE, HHSD, delimitR).
   `PREFIX=my_data-out` → `my_data-out-miss0.9-maf0.01-th100.recode.vcf`.
 - **Thinned or not**: the tree methods use the thinned VCF (one SNP per
   locus); ancestry painting and Dsuite use a VCF that is not thinned (see
-  each tutorial).
+  each tutorial). HyDe, Dfoil, ADMIXTOOLS and SNaQ used the thinned VCF
+  with the outgroup in the original analysis.
 
 ## More information
 
